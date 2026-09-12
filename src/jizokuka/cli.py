@@ -186,7 +186,27 @@ def cmd_sample(args: argparse.Namespace) -> int:
 
     API キーが無くても、出力物の形と「採択レベルとはどの粒度か」を確認できる。
     """
-    from .samples import load_model_answer, sample_hearing_path
+    from .samples import (
+        load_model_answer,
+        load_shien_fill,
+        sample_hearing_path,
+        shien_form_path,
+    )
+
+    if args.form == "shien":
+        from .render.docx_template import fill
+
+        blocks, tables = load_shien_fill()
+        out_dir = Path(args.output)
+        target = out_dir / "事業計画書_支援機関様式_記入済.docx"
+        path, _ = fill(shien_form_path(), target, blocks, tables)
+        _ok(f"{path.name} → {path}")
+        body_chars = sum(len(v.replace("\n", "")) for v in blocks.values())
+        _say(f"{C_DIM}  {len(blocks)}項目 / 本文{body_chars:,}字 / 表{len(tables)}点を"
+             f"流し込みました。書式は様式ファイルのままです。{C_RESET}")
+        _say(f"{C_DIM}  元の様式: {shien_form_path()}{C_RESET}")
+        _say(f"{C_DIM}※ 本サンプルの事業者・数値・統計・人名はすべて架空です。{C_RESET}")
+        return 0
 
     plan = load_model_answer()
     koubo = load_koubo(plan.koubo_id)
@@ -409,6 +429,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("sample", help="模範解答から成果物一式を生成する（LLM 不要）")
     sp.add_argument("--output", "-o", default="./sample_outputs", help="出力先ディレクトリ")
+    sp.add_argument(
+        "--form",
+        choices=["yoshiki2", "shien"],
+        default="yoshiki2",
+        help="yoshiki2: 様式2・様式3を生成 / shien: 支援機関様式に流し込む",
+    )
     sp.set_defaults(func=cmd_sample)
 
     sp = sub.add_parser("list", help="案件一覧")

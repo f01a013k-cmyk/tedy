@@ -10,13 +10,15 @@ from pathlib import Path
 
 import yaml
 
-from .config import EXAMPLE_DIR
+from .config import EXAMPLE_DIR, FORM_DIR
 from .knowledge import Koubo, load_koubo
 from .models import ExpenseItem, HearingSheet, Plan, SectionDraft
 from .pipeline import compliance, quality
 from .pipeline.expense import funding_plan
 
 MODEL_ANSWER = "tanaka_seika_模範解答.yaml"
+SHIEN_FILL = "tanaka_seika_支援機関様式.yaml"
+SHIEN_FORM = "事業計画書_支援機関様式.docx"
 SAMPLE_HEARING = "tanaka_seika.yaml"
 
 
@@ -72,3 +74,18 @@ def load_model_answer(koubo: Koubo | None = None) -> Plan:
     plan.quality = quality.check_plan(plan)
     plan.compliance = compliance.check(plan, koubo)
     return plan
+
+
+def shien_form_path() -> Path:
+    """支援機関の事業計画書様式（.docx）."""
+    return FORM_DIR / SHIEN_FORM
+
+
+def load_shien_fill() -> tuple[dict[str, str], dict[int, dict]]:
+    """支援機関様式への流し込み内容（本文ブロックと表データ）を返す."""
+    path = EXAMPLE_DIR / SHIEN_FILL
+    if not path.exists():
+        raise FileNotFoundError(f"流し込み内容が見つかりません: {path}")
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    tables = {int(k): v for k, v in (raw.get("tables") or {}).items()}
+    return raw["blocks"], tables
