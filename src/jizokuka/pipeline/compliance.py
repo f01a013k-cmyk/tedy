@@ -32,7 +32,9 @@ def check(plan: Plan, koubo: Koubo, sheet: HearingSheet | None = None) -> Compli
 
     _check_koubo_verified(rep, koubo)
     _check_sections(rep, plan, koubo)
+    _check_specials(rep, plan, koubo, sheet)
     _check_expenses(rep, plan, koubo, sheet)
+    _check_procedural_notes(rep, koubo)
     _check_text_quality(rep, plan, koubo)
     _check_funding(rep, plan, koubo, sheet)
 
@@ -97,6 +99,38 @@ def _check_sections(rep: ComplianceReport, plan: Plan, koubo: Koubo) -> None:
                 fix_hint=f"`jizokuka trim {plan.project_id} --section {key}` で圧縮できます。",
             )
         # 分量不足は quality.py が must として扱うため、ここでは重複して出さない
+
+
+def _check_specials(rep: ComplianceReport, plan: Plan, koubo: Koubo,
+                    sheet: HearingSheet | None) -> None:
+    """上乗せ特例の適格性. 補助上限が倍変わるため、金額より先に疑う."""
+    if "インボイス特例" not in plan.specials:
+        return
+    spec = (koubo.raw.get("specials") or {}).get("インボイス特例") or {}
+    threshold = int(spec.get("sales_threshold_yen", 10_000_000))
+    sales = (sheet.company.sales if sheet else {}) or {}
+    top = max(sales.values(), default=0)
+    if top > threshold:
+        year = max(sales, key=lambda k: sales[k])
+        rep.add(
+            "warn",
+            "specials.invoice_eligibility",
+            f"インボイス特例を適用していますが、{year}年度の売上が{top:,}円で"
+            f"{threshold:,}円を超えています。特例の対象は免税事業者からの転換者であり、"
+            f"継続して課税売上高が{threshold:,}円を超える事業者は元から課税事業者のため"
+            f"適用できません。",
+            where="インボイス特例",
+            fix_hint="適用できない場合、補助上限は"
+            f"{koubo.limit_yen(plan.frame, []):,}円になります。"
+            "課税・免税の別を事業者に確認してください。",
+        )
+
+
+def _check_procedural_notes(rep: ComplianceReport, koubo: Koubo) -> None:
+    """申請を潰す手続き論点を、文章の出来とは別に必ず申し送る."""
+    for note in koubo.raw.get("procedural_notes", []):
+        rep.add("info", "procedure", note["note"].strip().split("\n")[0],
+                where=note["key"])
 
 
 def _check_expenses(

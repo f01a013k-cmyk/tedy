@@ -123,6 +123,18 @@ def check_section(
                 )
                 break  # 同じ理由の指摘を重ねない
 
+    # -- 推定値の出所を人に帰属させていないか -------------------------------
+    attrib = rules.raw.get("attribution_phrases") or {}
+    hit = next((w for w in attrib.get("words", []) if w in body), None)
+    if hit:
+        add(
+            "attribution",
+            "must",
+            f"推定値の出所を人に帰属させている可能性がある（『{hit}』）",
+            attrib.get("reason", "推定であることを明示するか〈要確認〉を残す"),
+            excerpt=_around(body, hit),
+        )
+
     # -- 曖昧な数量表現 -----------------------------------------------------
     vague = rules.raw.get("vague_quantifiers", {})
     hits = [w for w in vague.get("words", []) if w in body]

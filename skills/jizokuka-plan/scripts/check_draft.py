@@ -125,6 +125,14 @@ def check_quality(draft: dict, koubo: dict, rules: dict) -> list[Finding]:
                     f"主観的な表現『{hit}』が使われている",
                     f"『{hit}』を削り、{group['reason']}")
 
+        # -- 推定値の出所を人に帰属させていないか -----------------------------
+        attrib = rules.get("attribution_phrases") or {}
+        hit = next((w for w in attrib.get("words", []) if w in clean), None)
+        if hit:
+            add("attribution", "must",
+                f"推定値の出所を人に帰属させている可能性がある（『{hit}』）",
+                attrib.get("reason", "推定であることを明示するか〈要確認〉を残す").strip())
+
         # -- 曖昧な数量表現 ---------------------------------------------------
         vague = rules.get("vague_quantifiers") or {}
         hits = [w for w in vague.get("words", []) if w in clean]
@@ -297,6 +305,30 @@ def check_compliance(draft: dict, koubo: dict) -> list[Finding]:
             "warn", "koubo.verified", koubo["meta"]["display_name"],
             "公募要領ナレッジが未検証。金額・補助率・様式構成が実際と異なる可能性がある",
             "申請する回次の公募要領PDFと突合し、references/koubo_*.yaml の meta.verified を true にする"))
+
+    # -- 上乗せ特例の適格性 --------------------------------------------------
+    # 補助上限が倍変わるため、金額の計算より先に疑う。
+    if "インボイス特例" in specials:
+        spec = (koubo.get("specials") or {}).get("インボイス特例") or {}
+        threshold = int(spec.get("sales_threshold_yen", 10_000_000))
+        sales = ((draft.get("company") or {}).get("sales") or {})
+        top = max((int(v) for v in sales.values()), default=0)
+        if top > threshold:
+            year = max(sales, key=lambda k: int(sales[k]))
+            base_limit = int(koubo["frames"][frame]["limit_yen"])
+            out.append(Finding(
+                "warn", "specials.invoice_eligibility", "インボイス特例",
+                f"インボイス特例を適用していますが、{year}年度の売上が{top:,}円で"
+                f"{threshold:,}円を超えています。特例の対象は免税事業者からの転換者であり、"
+                f"継続して課税売上高が{threshold:,}円を超える事業者は元から課税事業者のため"
+                "適用できません。",
+                f"適用できない場合、補助上限は{base_limit:,}円になります。"
+                "課税・免税の別を事業者に確認してください。"))
+        elif not sales:
+            out.append(Finding(
+                "info", "specials.invoice_eligibility", "インボイス特例",
+                "売上が draft に無いため、インボイス特例の適格性を機械的に確認できません。",
+                "company.sales に年度別売上を入れると自動で判定します。"))
 
     # -- セクション ---------------------------------------------------------
     for key, spec in specs.items():
@@ -499,6 +531,11 @@ def main() -> int:
     rules = load_yaml(REF_DIR / "writing_rules.yaml")
 
     findings = check_quality(draft, koubo, rules) + check_compliance(draft, koubo)
+
+    # 文章の出来とは無関係に申請を潰す論点は、毎回申し送る
+    for note in koubo.get("procedural_notes", []):
+        findings.append(Finding("info", "procedure", note["key"],
+                                note["note"].strip().split("\n")[0]))
 
     if args.json:
         print(json.dumps([f.as_dict() for f in findings], ensure_ascii=False, indent=2))

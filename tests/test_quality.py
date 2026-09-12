@@ -180,3 +180,17 @@ def test_指摘はリライト指示として使える形に整形される():
 def test_執筆時に品質要件が伝えられる(key, expected):
     """後段のチェックと同じ条件を最初のドラフトに伝え、リライト回数を減らす."""
     assert expected in requirements_prompt(key)
+
+
+def test_推定値の出所を人に帰属させたら要修正():
+    """モデルが逆算した数値を『聞き取りに基づく』と書くのは出所の偽装にあたる."""
+    body = "品目別の構成比は、代表への聞き取りに基づく概算値である。" + "あ" * 200
+    f = [x for x in check_section(_sec("company_overview", body)) if x.code == "attribution"]
+    assert f and f[0].severity == "must"
+    assert "〈要確認〉" in f[0].fix or "推定" in f[0].fix
+
+
+def test_推定と明示していれば指摘しない():
+    body = "品目別の構成比は、売上高を提示単価で割り戻して算出した推計値である。" + "あ" * 200
+    codes = {x.code for x in check_section(_sec("company_overview", body))}
+    assert "attribution" not in codes

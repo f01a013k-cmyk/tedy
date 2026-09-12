@@ -305,6 +305,29 @@ def _load(path: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
+def coverage(draft: dict, blocks: dict[str, str]) -> tuple[int, int, list[str]]:
+    """下書きの段落が、どれだけ様式に「そのまま」載っているかを測る.
+
+    様式への流し込みは書き直しではなく配置である。せっかく検査を通した本文を
+    書き直すと、品質検査の結果が成果物に効かなくなる。ここで機械的に検知する。
+
+    戻り値は (載っている段落数, 全段落数, 載っていない段落の先頭抜粋)。
+    """
+    form = re.sub(r"\s+", "", "\n".join(str(v) for v in blocks.values()))
+    total, hit, lost = 0, 0, []
+    for body in (draft.get("sections") or {}).values():
+        for para in str(body).split("\n"):
+            para = para.strip()
+            if len(para) < 18:
+                continue
+            total += 1
+            if re.sub(r"\s+", "", para) in form:
+                hit += 1
+            elif len(lost) < 6:
+                lost.append(para[:60])
+    return hit, total, lost
+
+
 def main() -> int:
     import argparse
 
@@ -316,6 +339,7 @@ def main() -> int:
     ap.add_argument("--out", "-o", default="./事業計画書_記入済.docx", help="出力先")
     ap.add_argument("--loose", action="store_true",
                     help="様式に無い見出しがあってもエラーにしない")
+    ap.add_argument("--draft", help="下書きの YAML。本文がそのまま載っているかを検査する")
     args = ap.parse_args()
 
     raw = _load(Path(args.fill))
@@ -339,6 +363,22 @@ def main() -> int:
     print(f"  {len(blocks)}項目 / 本文{body_chars:,}字 / 表{len(tables)}点を流し込みました。")
     if missing:
         print(f"  様式に対応する見出しが無かったキー: {', '.join(missing)}", file=sys.stderr)
+
+    if args.draft:
+        hit, total, lost = coverage(_load(Path(args.draft)), blocks)
+        pct = (hit / total * 100) if total else 100.0
+        print(f"  下書き本文の収録率: {hit}/{total}段落（{pct:.0f}%）")
+        if pct < 80:
+            print(
+                "\n  ⚠️  下書きの本文が様式に載っていません。\n"
+                "     様式への流し込みは書き直しではなく配置です。検査を通した本文を\n"
+                "     書き直すと、品質検査の結果が成果物に効かなくなります。\n"
+                "     様式の小項目には下書きの段落をそのまま割り当て、様式が追加で\n"
+                "     求める項目（設立経緯・組織体制など）だけを新たに書いてください。",
+                file=sys.stderr)
+            for x in lost:
+                print(f"     載っていない例: {x}", file=sys.stderr)
+            return 1
     return 0
 
 

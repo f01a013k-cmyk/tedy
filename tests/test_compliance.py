@@ -143,3 +143,36 @@ def test_補助上限を超える経費は自己負担額を示す(koubo):
     plan = _plan(expenses=[ExpenseItem(category="機械装置等費", item="機械", amount=3_000_000, basis="見積")])
     issues = _rules(check(plan, koubo), "expense.over_limit")
     assert issues and "全額自己負担" in issues[0].message
+
+
+def test_インボイス特例の適格性を売上から疑う(koubo):
+    """特例の対象は免税事業者からの転換者。補助上限が倍変わる論点なので必ず疑う."""
+    from jizokuka.models import Company, HearingSheet
+
+    sheet = HearingSheet(
+        project_id="t", company=Company(sales={2024: 42_000_000}), specials=["インボイス特例"]
+    )
+    plan = _plan(specials=["インボイス特例"],
+                 expenses=[ExpenseItem(category="機械装置等費", item="機械", amount=100_000, basis="見積")])
+    issues = _rules(check(plan, koubo, sheet), "specials.invoice_eligibility")
+    assert issues and issues[0].severity == "warn"
+    assert "免税事業者" in issues[0].message
+
+
+def test_売上が閾値以下なら特例を疑わない(koubo):
+    from jizokuka.models import Company, HearingSheet
+
+    sheet = HearingSheet(
+        project_id="t", company=Company(sales={2024: 8_000_000}), specials=["インボイス特例"]
+    )
+    plan = _plan(specials=["インボイス特例"],
+                 expenses=[ExpenseItem(category="機械装置等費", item="機械", amount=100_000, basis="見積")])
+    assert not _rules(check(plan, koubo, sheet), "specials.invoice_eligibility")
+
+
+def test_手続き論点を毎回申し送る(koubo):
+    """文章の出来とは無関係に申請を潰す論点（様式4・交付決定前発注・建物の扱い）."""
+    issues = _rules(check(_plan(), koubo), "procedure")
+    keys = {i.where for i in issues}
+    assert {"事業支援計画書", "交付決定前の発注", "建物の取り扱い"} <= keys
+    assert all(i.severity == "info" for i in issues)

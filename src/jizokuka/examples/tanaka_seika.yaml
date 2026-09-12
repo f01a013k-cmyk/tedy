@@ -2,7 +2,7 @@
 project_id: tanaka_seika
 koubo_id: r17
 frame: 通常枠
-specials: [インボイス特例]
+specials: []          # インボイス特例は免税事業者からの転換が要件。売上3,500万円では適用不可
 
 company:
   name: 有限会社田中製菓

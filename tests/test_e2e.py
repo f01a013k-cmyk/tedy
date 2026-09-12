@@ -39,9 +39,10 @@ def test_資金調達が経費合計と一致する(built):
     assert built.plan.funding["補助金"] == 333_333  # 500,000 × 2/3 切捨
 
 
-def test_インボイス特例が上限に反映される(built, koubo):
-    assert built.plan.specials == ["インボイス特例"]
-    assert koubo.limit_yen(built.plan.frame, built.plan.specials) == 1_000_000
+def test_上乗せ特例が補助上限に加算される(koubo):
+    """サンプルの特例有無に依存させない（サンプルは回次や適格性で変わるため）."""
+    assert koubo.limit_yen("通常枠", []) == 500_000
+    assert koubo.limit_yen("通常枠", ["インボイス特例"]) == 1_000_000
 
 
 def test_準拠チェックが実行されている(built):

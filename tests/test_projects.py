@@ -22,7 +22,8 @@ def test_ヒアリングシートを保存して読み戻せる(workspace, sheet
     loaded = proj.load_hearing()
     assert loaded.company.name == sheet.company.name
     assert loaded.company.sales == sheet.company.sales
-    assert loaded.specials == ["インボイス特例"]
+    assert loaded.specials == sheet.specials
+    assert loaded.competitors == sheet.competitors
 
 
 def test_ギャップ分析を保存して読み戻せる(workspace, sheet, fake_llm, koubo):
