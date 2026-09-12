@@ -22,7 +22,7 @@ jizokuka = "jizokuka.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-jizokuka = ["knowledge/*.yaml", "llm/prompts/*.md", "templates/*.yaml"]
+jizokuka = ["knowledge/*.yaml", "llm/prompts/*.md", "templates/*.yaml", "examples/*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

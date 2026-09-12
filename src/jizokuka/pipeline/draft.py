@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 from ..config import MODEL_DRAFT
-from ..knowledge import Koubo
+from ..knowledge import Koubo, examples_prompt
 from ..llm import LLM
 from ..llm.client import load_prompt
 from ..models import GapAnalysis, HearingSheet, SectionDraft
 from .gap import _sheet_yaml, answers_text, facts_text
+from .quality import requirements_prompt
+
+# 記入欄に対してこの割合を下回ると情報量不足とみなされるため、執筆時の下限として伝える
+MIN_CHAR_RATIO = 0.6
+
+
+def min_chars_for(max_chars: int) -> int:
+    return int(max_chars * MIN_CHAR_RATIO)
 
 
 def draft_section(
@@ -30,12 +38,15 @@ def draft_section(
         heading=spec["heading"],
         guidance=spec.get("guidance", ""),
         max_chars=max_chars,
+        min_chars=min_chars_for(max_chars),
         hard_note=(
             "この項目は様式上の**絶対的な上限**であり、1文字でも超えると受理されません。"
             if spec.get("hard_limit")
             else ""
         ),
         axes=axes or "（指定なし）",
+        quality_requirements=requirements_prompt(spec["key"]) or "（特になし）",
+        examples=examples_prompt(spec["key"]) or "（参考例なし）",
         hearing_yaml=_sheet_yaml(sheet),
         facts=facts_text(gap.facts),
         answers=answers_text(gap),

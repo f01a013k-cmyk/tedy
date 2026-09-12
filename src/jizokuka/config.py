@@ -10,6 +10,7 @@ PKG_DIR = Path(__file__).resolve().parent
 KNOWLEDGE_DIR = PKG_DIR / "knowledge"
 PROMPT_DIR = PKG_DIR / "llm" / "prompts"
 TEMPLATE_DIR = PKG_DIR / "templates"
+EXAMPLE_DIR = PKG_DIR / "examples"
 
 # 用途別モデル。長文生成と厳密採点は上位モデル、抽出系は高速モデルに振る。
 MODEL_DRAFT = os.environ.get("JIZOKUKA_MODEL_DRAFT", "claude-opus-5")

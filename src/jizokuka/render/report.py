@@ -15,6 +15,14 @@ def _bar(score: int, width: int = 20) -> str:
 def score_report(plan: Plan, history: list[float] | None = None) -> str:
     out = [f"# 審査観点スコアレポート — {plan.project_id}", ""]
 
+    if plan.quality:
+        must = [f for f in plan.quality if f.severity == "must"]
+        should = [f for f in plan.quality if f.severity != "must"]
+        out += [
+            f"> 文章品質チェック: **要修正 {len(must)}件** / 推奨 {len(should)}件",
+            "",
+        ]
+
     if plan.score:
         s = plan.score
         out += [
@@ -53,6 +61,8 @@ def score_report(plan: Plan, history: list[float] | None = None) -> str:
     else:
         out.append("（未採点）")
 
+    out += _quality_section(plan)
+
     if plan.compliance:
         c = plan.compliance
         out += ["## 公募要領準拠チェック", ""]
@@ -90,3 +100,34 @@ def score_report(plan: Plan, history: list[float] | None = None) -> str:
         out.append("")
 
     return "\n".join(out)
+
+
+def _quality_section(plan: Plan) -> list[str]:
+    """文章品質チェックの結果. LLM を通さず検出した、審査で確実に減点される書き方."""
+    if not plan.quality:
+        return []
+
+    out = ["## 文章品質チェック（機械検査）", ""]
+    labels = {
+        "must": ("🛑", "要修正 — 審査で確実に減点される"),
+        "should": ("⚠️", "推奨 — 直すと説得力が上がる"),
+    }
+    for severity in ("must", "should"):
+        items = [f for f in plan.quality if f.severity == severity]
+        if not items:
+            continue
+        icon, label = labels[severity]
+        out += [f"### {icon} {label} — {len(items)}件", ""]
+
+        by_section: dict[str, list] = {}
+        for f in items:
+            by_section.setdefault(f.section_heading or f.section_key, []).append(f)
+        for heading, fs in by_section.items():
+            out.append(f"**{heading}**")
+            for f in fs:
+                out.append(f"- `{f.code}` {f.message}")
+                out.append(f"  - 直し方: {f.fix}")
+                if f.excerpt:
+                    out.append(f"  - 該当: 「{f.excerpt.strip()}」")
+            out.append("")
+    return out

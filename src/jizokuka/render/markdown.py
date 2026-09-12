@@ -18,6 +18,7 @@ def plan_markdown(plan: Plan, koubo: Koubo) -> str:
     out: list[str] = [
         f"# 事業計画書（{koubo.display_name}）",
         "",
+        f"- 事業者名: {plan.company_name or '（未設定）'}",
         f"- 案件ID: `{plan.project_id}`",
         f"- 申請枠: {plan.frame}"
         + (f"（{'・'.join(plan.specials)}）" if plan.specials else ""),

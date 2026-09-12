@@ -133,5 +133,7 @@ def sheet():
 
     from pathlib import Path
 
-    path = Path(__file__).resolve().parent.parent / "examples" / "tanaka_seika.yaml"
+    from jizokuka.config import EXAMPLE_DIR
+
+    path = EXAMPLE_DIR / "tanaka_seika.yaml"
     return HearingSheet.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))

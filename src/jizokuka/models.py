@@ -252,6 +252,22 @@ class ScoreReport(Loose):
         return sorted(self.axes, key=lambda a: a.score)[:n]
 
 
+class QualityFinding(Loose):
+    """文章品質の指摘（決定論的チェックの結果）.
+
+    severity: must … 審査で確実に減点される。直さずに提出しない
+              should … 直すと読みやすさ・説得力が上がる
+    """
+
+    section_key: str
+    section_heading: str = ""
+    code: str
+    severity: str = "should"
+    message: str
+    fix: str
+    excerpt: str | None = None
+
+
 class ComplianceIssue(Loose):
     severity: str = Field(description="error / warn / info")
     rule: str
@@ -287,6 +303,8 @@ class Plan(Loose):
     project_id: str
     koubo_id: str
     frame: str
+    company_name: str | None = Field(default=None, description="様式に記載する事業者名")
+    representative: str | None = None
     specials: list[str] = Field(default_factory=list)
     generated_at: str = Field(default_factory=lambda: date.today().isoformat())
     sections: list[SectionDraft] = Field(default_factory=list)
@@ -295,6 +313,7 @@ class Plan(Loose):
     funding: dict[str, int] = Field(default_factory=dict)
     score: ScoreReport | None = None
     compliance: ComplianceReport | None = None
+    quality: list[QualityFinding] = Field(default_factory=list)
     facts: list[Fact] = Field(default_factory=list)
 
     def all_sections(self) -> list[SectionDraft]:

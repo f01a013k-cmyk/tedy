@@ -22,7 +22,7 @@ from .config import SETTINGS
 from .knowledge import load_koubo
 from .llm import LLM, LLMError
 from .models import Plan
-from .pipeline import compliance
+from .pipeline import compliance, quality
 from .projects import Project, list_projects
 from .render import docx_form, markdown, report, xlsx_expense
 
@@ -155,7 +155,13 @@ def cmd_check(args: argparse.Namespace) -> int:
     koubo = load_koubo(plan.koubo_id)
 
     plan.compliance = compliance.check(plan, koubo, sheet)
+    plan.quality = quality.check_plan(plan)
     proj.save_plan(plan)
+
+    for f in plan.quality:
+        fn = _err if f.severity == "must" else _warn
+        fn(f"[{f.code}] {f.section_heading}: {f.message}")
+        _say(f"{C_DIM}    → {f.fix}{C_RESET}")
 
     for i in plan.compliance.issues:
         fn = {"error": _err, "warn": _warn}.get(i.severity, _say)
@@ -170,7 +176,37 @@ def cmd_render(args: argparse.Namespace) -> int:
     proj = Project.open(args.project_id)
     plan = proj.load_plan()
     koubo = load_koubo(plan.koubo_id)
+    plan.quality = quality.check_plan(plan)
     _render_all(proj, plan, koubo, None, template=args.template)
+    return _summary(plan, koubo)
+
+
+def cmd_sample(args: argparse.Namespace) -> int:
+    """同梱の模範解答から成果物一式を生成する（LLM を使わない）.
+
+    API キーが無くても、出力物の形と「採択レベルとはどの粒度か」を確認できる。
+    """
+    from .samples import load_model_answer, sample_hearing_path
+
+    plan = load_model_answer()
+    koubo = load_koubo(plan.koubo_id)
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+
+    paths = [
+        markdown.write(out / "事業計画書.md", markdown.plan_markdown(plan, koubo)),
+        markdown.write(out / "審査スコアレポート.md", report.score_report(plan, None)),
+        docx_form.build_yoshiki2(plan, koubo, out / "様式2_経営計画書兼補助事業計画書1.docx"),
+        docx_form.build_yoshiki3(plan, koubo, out / "様式3_補助事業計画書2.docx"),
+        xlsx_expense.build(plan, koubo, out / "経費明細・資金調達.xlsx"),
+    ]
+    for pth in paths:
+        _ok(f"{pth.name} → {pth}")
+
+    _say("")
+    _say(f"{C_DIM}元になったヒアリングシート（単語レベル）: {sample_hearing_path()}{C_RESET}")
+    _say(f"{C_DIM}※ 本サンプルの事業者・数値・統計はすべて架空です。"
+         f"書き方の型を示すためのもので、統計数値を流用しないでください。{C_RESET}")
     return _summary(plan, koubo)
 
 
@@ -289,6 +325,19 @@ def _summary(plan: Plan, koubo) -> int:
     _say(f"  補助対象経費 {total:,}円 → 補助金申請額 {grant:,}円")
     if plan.score:
         _say(f"  自己採点 {plan.score.total}点（{plan.score.verdict}）")
+
+    must = [f for f in plan.quality if f.severity == "must"]
+    if must:
+        _err(f"文章品質: 要修正{len(must)}件 — 審査で減点されます")
+        for f in must[:5]:
+            _say(f"{C_DIM}    {f.section_heading}: {f.message}{C_RESET}")
+        if len(must) > 5:
+            _say(f"{C_DIM}    …ほか{len(must) - 5}件（審査スコアレポート参照）{C_RESET}")
+    elif plan.quality:
+        _warn(f"文章品質: 推奨事項{len(plan.quality)}件")
+    elif plan.all_sections():
+        _ok("文章品質: 指摘なし")
+
     if plan.compliance:
         n_err, n_warn = len(plan.compliance.errors), len(plan.compliance.warnings)
         if n_err:
@@ -313,6 +362,9 @@ def build_parser() -> argparse.ArgumentParser:
   （顧客の回答を answers.yaml に転記）
   jizokuka build tanaka                     # 生成・採点・リライト・チェック
   jizokuka check tanaka                     # 手直し後の再チェック
+
+まず何が出るか見たいとき（APIキー不要）:
+  jizokuka sample -o ./sample_outputs       # 模範解答から Word/Excel を生成
 """,
     )
     p.add_argument("--version", action="version", version=f"jizokuka {__version__}")
@@ -354,6 +406,10 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("project_id")
     sp.add_argument("--template", help="公式様式の .docx に流し込む")
     sp.set_defaults(func=cmd_render)
+
+    sp = sub.add_parser("sample", help="模範解答から成果物一式を生成する（LLM 不要）")
+    sp.add_argument("--output", "-o", default="./sample_outputs", help="出力先ディレクトリ")
+    sp.set_defaults(func=cmd_sample)
 
     sp = sub.add_parser("list", help="案件一覧")
     sp.set_defaults(func=cmd_list)

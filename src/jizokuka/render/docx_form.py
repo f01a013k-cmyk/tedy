@@ -84,16 +84,13 @@ def build_yoshiki2(plan: Plan, koubo: Koubo, out_path: Path) -> Path:
     sub.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     _set_jp_font(sub.add_run("（様式2）"), size=9)
 
-    _kv_table(
-        doc,
-        [
-            ("補助事業者名", plan.project_id),
-            (
-                "申請枠",
-                plan.frame + (f"（{'・'.join(plan.specials)}）" if plan.specials else ""),
-            ),
-        ],
+    rows = [("補助事業者名", plan.company_name or plan.project_id)]
+    if plan.representative:
+        rows.append(("代表者名", plan.representative))
+    rows.append(
+        ("申請枠", plan.frame + (f"（{'・'.join(plan.specials)}）" if plan.specials else ""))
     )
+    _kv_table(doc, rows)
 
     doc.add_paragraph()
     _heading(doc, "【経営計画】", size=12)

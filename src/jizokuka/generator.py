@@ -15,7 +15,7 @@ from .config import SETTINGS
 from .knowledge import Koubo, load_koubo
 from .llm import LLM
 from .models import GapAnalysis, HearingSheet, Plan
-from .pipeline import compliance, draft, expense, gap, review, revise
+from .pipeline import compliance, draft, expense, gap, quality, review, revise
 
 Reporter = Callable[[str], None]
 
@@ -26,6 +26,7 @@ class BuildResult:
     gap: GapAnalysis
     score_history: list[float] = field(default_factory=list)
     expense_warnings: list[str] = field(default_factory=list)
+    quality_history: list[int] = field(default_factory=list)
 
 
 def build(
@@ -73,6 +74,8 @@ def build(
         project_id=sheet.project_id,
         koubo_id=koubo.id,
         frame=sheet.frame,
+        company_name=sheet.company.name,
+        representative=sheet.company.representative,
         specials=sheet.specials,
         sections=sections,
         project_sections=project_sections,
@@ -83,7 +86,12 @@ def build(
         facts=g.facts,
     )
 
-    # 4. 採点 → リライトのループ -------------------------------------------
+    # 4. 品質チェック（決定論的）→ 採点 → リライトのループ ------------------
+    # 機械チェックは API を消費しないので、採点より先に走らせて弱点を確定させる。
+    plan.quality = quality.check_plan(plan)
+    q_history: list[int] = [_must_count(plan)]
+    report(f"文章品質: 要修正{q_history[0]}件 / 推奨{len(plan.quality) - q_history[0]}件")
+
     history: list[float] = []
     report("採点: 審査員視点でスコアリング中…")
     plan.score = review.score(plan, koubo, llm)
@@ -91,18 +99,35 @@ def build(
     report(f"  → {plan.score.total}点 / {plan.score.verdict}")
 
     for r in range(1, max_revisions + 1):
-        if plan.score.total >= target_score:
-            report(f"目標{target_score}点に到達。リライトを終了")
+        must = _must_count(plan)
+        if plan.score.total >= target_score and must == 0:
+            report(f"目標{target_score}点に到達し、要修正の品質指摘も無し。リライトを終了")
             break
-        weak = ", ".join(f"{a.axis}({a.score})" for a in plan.score.weakest_axes(2))
-        report(f"リライト{r}回目: 弱点[{weak}]を改稿中…")
+
+        reasons = []
+        if plan.score.total < target_score:
+            reasons.append(
+                "弱点[" + ", ".join(f"{a.axis}({a.score})" for a in plan.score.weakest_axes(2)) + "]"
+            )
+        if must:
+            reasons.append(f"品質指摘{must}件")
+        report(f"リライト{r}回目: {' / '.join(reasons)}を改稿中…")
+
         plan = revise.revise_round(plan, sheet, g, koubo, llm)
+        plan.quality = quality.check_plan(plan)
+        q_history.append(_must_count(plan))
         plan.score = review.score(plan, koubo, llm)
         history.append(plan.score.total)
+
         delta = history[-1] - history[-2]
-        report(f"  → {plan.score.total}点（{delta:+.1f}） / {plan.score.verdict}")
-        if delta <= 0 and r >= 2:
-            report("  スコアが改善しないため打ち切り。人手での加筆を推奨します")
+        q_delta = q_history[-1] - q_history[-2]
+        report(
+            f"  → {plan.score.total}点（{delta:+.1f}） / {plan.score.verdict}"
+            f" / 要修正{q_history[-1]}件（{q_delta:+d}）"
+        )
+        # スコアも品質も改善しないなら、これ以上回しても API を浪費するだけ
+        if delta <= 0 and q_delta >= 0 and r >= 2:
+            report("  スコア・品質とも改善しないため打ち切り。人手での加筆を推奨します")
             break
 
     # 5. 公募要領準拠チェック ----------------------------------------------
@@ -112,4 +137,14 @@ def build(
     n_warn = len(plan.compliance.warnings)
     report(f"  → エラー{n_err}件 / 警告{n_warn}件")
 
-    return BuildResult(plan=plan, gap=g, score_history=history, expense_warnings=warns)
+    return BuildResult(
+        plan=plan,
+        gap=g,
+        score_history=history,
+        expense_warnings=warns,
+        quality_history=q_history,
+    )
+
+
+def _must_count(plan: Plan) -> int:
+    return sum(1 for f in plan.quality if f.severity == "must")

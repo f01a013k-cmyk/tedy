@@ -214,6 +214,41 @@ def _validate(raw: dict[str, Any], path: Path) -> None:
             ) from e
 
 
+@lru_cache(maxsize=2)
+def load_section_examples() -> dict[str, dict[str, str]]:
+    """セクション別 few-shot（悪い例 / 良い例）を読み込む."""
+    path = KNOWLEDGE_DIR / "section_examples.yaml"
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")).get("examples", {})
+
+
+def examples_prompt(section_key: str) -> str:
+    """該当セクションの few-shot だけをプロンプト用に整形する.
+
+    全セクション分を入れるとトークンを浪費し、かつ関係ない例に引きずられる。
+    """
+    ex = load_section_examples().get(section_key)
+    if not ex:
+        return ""
+    parts: list[str] = []
+    if ex.get("bad"):
+        parts.append(
+            "### 不採択になる書き方（これを避ける）\n\n"
+            f"> {ex['bad'].strip()}\n\n"
+            f"**なぜ駄目か**: {ex.get('bad_why', '')}"
+        )
+    if ex.get("good"):
+        parts.append(
+            "### 採択レベルの書き方（この粒度を目指す）\n\n"
+            f"> {ex['good'].strip()}\n\n"
+            f"**なぜ良いか**: {ex.get('good_why', '')}\n\n"
+            "※ 上の例は架空の事業者のものである。数値や固有名詞を流用してはならない。"
+            "真似るのは**粒度と論理構成**だけである。"
+        )
+    return "\n\n".join(parts)
+
+
 @lru_cache(maxsize=8)
 def load_koubo(koubo_id: str = "r17") -> Koubo:
     path = KNOWLEDGE_DIR / f"koubo_{koubo_id}.yaml"
