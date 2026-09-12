@@ -76,18 +76,19 @@ def plan_markdown(plan: Plan, koubo: Koubo) -> str:
 
 
 def _section_md(no: str, sec) -> list[str]:
-    limit = f" / 上限{sec.max_chars}字" if sec.max_chars else ""
-    flag = " ⚠️**超過**" if sec.over_limit else ""
-    return [
-        "",
-        f"### {no}. {sec.heading}",
-        f"<sub>{sec.char_count}字{limit}{flag}"
-        + (f" / 改稿{sec.revision}回" if sec.revision else "")
-        + "</sub>",
-        "",
-        sec.body,
-        "",
-    ]
+    meta = f"{sec.char_count}字"
+    if sec.target_chars:
+        meta += f" / 目標{sec.target_chars}字"
+        ratio = sec.fill_ratio
+        if ratio is not None:
+            meta += f"（充足率{ratio * 100:.0f}%）"
+    if sec.over_limit:
+        meta += f" ⚠️**上限{sec.max_chars}字を超過**"
+    elif sec.under_min:
+        meta += f" ⚠️**下限{sec.min_chars}字に未達**"
+    if sec.revision:
+        meta += f" / 改稿{sec.revision}回"
+    return ["", f"### {no}. {sec.heading}", f"<sub>{meta}</sub>", "", sec.body, ""]
 
 
 def questions_markdown(gap: GapAnalysis, project_id: str) -> str:

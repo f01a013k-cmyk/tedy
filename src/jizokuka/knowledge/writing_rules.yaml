@@ -38,31 +38,31 @@ buzzwords:
 # min_numbers: 本文に含まれるべき数値の最低個数（年号を除く）
 section_requirements:
   company_overview:
-    min_numbers: 5
+    min_numbers: 12
     hints: [創業年, 従業員数, 売上高の推移, 商品点数, 客数]
   market_needs:
-    min_numbers: 3
+    min_numbers: 9
     require_source: true
     hints: [市場規模, 成長率, 商圏人口, 統計の出典]
   strengths:
-    min_numbers: 3
+    min_numbers: 8
     hints: [年数, 保有設備, 資格, リピート率, 歩留まり]
   policy_and_plan:
-    min_numbers: 4
+    min_numbers: 12
     require_yearly_target: true
     hints: [年度別の売上目標, 利益目標, 客数目標]
   project_name:
     min_numbers: 0
   sales_channel:
-    min_numbers: 5
+    min_numbers: 15
     require_schedule: true
     hints: [実施月, 金額, 数量, 想定客数, 単価]
   efficiency:
-    min_numbers: 2
+    min_numbers: 6
     require_time_saving: true
     hints: [削減時間, 作業回数]
   effect:
-    min_numbers: 4
+    min_numbers: 12
     require_formula: true
     hints: ["売上増の算出式（単価×客数×期間）", 利益率, 波及効果]
 

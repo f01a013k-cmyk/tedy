@@ -32,8 +32,10 @@ def test_模範解答が全セクションを文字数内で満たす():
         spec["key"] for spec in koubo.all_section_specs()
     }
     for s in plan.all_sections():
-        assert not s.over_limit, f"{s.heading}: {s.char_count}字 > {s.max_chars}字"
-        assert s.char_count >= (s.max_chars or 0) * 0.4, f"{s.heading} が短すぎる"
+        assert not s.over_limit, f"{s.heading}: {s.char_count}字 > 上限{s.max_chars}字"
+        assert not s.under_min, f"{s.heading}: {s.char_count}字 < 下限{s.min_chars}字"
+        # 模範解答は目標分量の85%以上を埋めていること（few-shot の分量基準になるため）
+        assert s.fill_ratio >= 0.85, f"{s.heading}: 充足率{s.fill_ratio:.0%}"
 
 
 def test_模範解答の金額が補助上限に収まる():
@@ -80,9 +82,11 @@ def test_few_shotの良例は自前の品質チェックを通る():
     for key, ex in load_section_examples().items():
         spec = koubo.section_spec(key)
         sec = SectionDraft(
-            key=key, heading=spec["heading"], body=ex["good"].strip(), max_chars=spec["max_chars"]
+            key=key, heading=spec["heading"], body=ex["good"].strip()
         )
-        must = [f for f in check_section(sec) if f.severity == "must" and f.code != "numbers"]
+        # few-shot は抜粋なので、分量と数値の個数は満たさなくてよい
+        skip = {"numbers", "length_short"}
+        must = [f for f in check_section(sec) if f.severity == "must" and f.code not in skip]
         assert not must, f"{key}: " + "; ".join(f.message for f in must)
 
 
@@ -98,7 +102,7 @@ def test_few_shotの悪例は品質チェックに引っかかる():
             continue  # 事業名は文章ではないため対象外
         spec = koubo.section_spec(key)
         sec = SectionDraft(
-            key=key, heading=spec["heading"], body=ex["bad"].strip(), max_chars=spec["max_chars"]
+            key=key, heading=spec["heading"], body=ex["bad"].strip()
         )
         if not check_section(sec):
             misses.append(key)

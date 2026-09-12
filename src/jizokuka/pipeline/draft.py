@@ -10,12 +10,13 @@ from ..models import GapAnalysis, HearingSheet, SectionDraft
 from .gap import _sheet_yaml, answers_text, facts_text
 from .quality import requirements_prompt
 
-# 記入欄に対してこの割合を下回ると情報量不足とみなされるため、執筆時の下限として伝える
-MIN_CHAR_RATIO = 0.6
 
-
-def min_chars_for(max_chars: int) -> int:
-    return int(max_chars * MIN_CHAR_RATIO)
+def char_budget(spec: dict) -> tuple[int, int, int]:
+    """(下限, 目標, 上限). 仕様に無ければ上限から比率で補う."""
+    max_chars = int(spec.get("max_chars", 800))
+    target = int(spec.get("target_chars", int(max_chars * 0.8)))
+    minimum = int(spec.get("min_chars", int(max_chars * 0.65)))
+    return minimum, target, max_chars
 
 
 def draft_section(
@@ -33,12 +34,13 @@ def draft_section(
     written_text = (
         "\n\n".join(f"【{s.heading}】\n{s.body}" for s in written) if written else "（まだ無い）"
     )
-    max_chars = spec.get("max_chars", 800)
+    min_chars, target_chars, max_chars = char_budget(spec)
     prompt = load_prompt("draft_section").format(
         heading=spec["heading"],
         guidance=spec.get("guidance", ""),
         max_chars=max_chars,
-        min_chars=min_chars_for(max_chars),
+        min_chars=min_chars,
+        target_chars=target_chars,
         hard_note=(
             "この項目は様式上の**絶対的な上限**であり、1文字でも超えると受理されません。"
             if spec.get("hard_limit")
@@ -64,6 +66,8 @@ def draft_section(
         key=spec["key"],
         heading=spec["heading"],
         body=body,
+        min_chars=min_chars,
+        target_chars=target_chars,
         max_chars=max_chars,
     )
 

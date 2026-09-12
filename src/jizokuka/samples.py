@@ -48,6 +48,8 @@ def load_model_answer(koubo: Koubo | None = None) -> Plan:
                     key=s["key"],
                     heading=s["heading"],
                     body=s["body"].strip(),
+                    min_chars=spec.get("min_chars"),
+                    target_chars=spec.get("target_chars"),
                     max_chars=spec.get("max_chars"),
                 )
             )

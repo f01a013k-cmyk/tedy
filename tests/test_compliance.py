@@ -28,18 +28,34 @@ def test_必須セクション欠落はエラー(koubo):
 
 
 def test_事業名30字超はエラー_他は警告(koubo):
+    """上限値は仕様から取る。ハードコードすると回次の調整でテストが嘘になる."""
+    name_spec = koubo.section_spec("project_name")
+    overview_spec = koubo.section_spec("company_overview")
     plan = _plan(
         project_sections=[
-            SectionDraft(key="project_name", heading="事業名", body="あ" * 31, max_chars=30),
+            SectionDraft(
+                key="project_name", heading="事業名",
+                body="あ" * (name_spec["max_chars"] + 1), max_chars=name_spec["max_chars"],
+            ),
         ],
         sections=[
-            SectionDraft(key="company_overview", heading="企業概要", body="い" * 900, max_chars=800),
+            SectionDraft(
+                key="company_overview", heading="企業概要",
+                body="い" * (overview_spec["max_chars"] + 100),
+                max_chars=overview_spec["max_chars"],
+            ),
         ],
     )
     rep = check(plan, koubo)
     lengths = {i.where: i.severity for i in _rules(rep, "form.section.length")}
     assert lengths["project_name"] == "error"     # 様式の絶対上限
     assert lengths["company_overview"] == "warn"  # 実務上の目安
+
+
+def test_分量不足は準拠チェックでは出さない(koubo):
+    """字数不足は quality.py が must として扱うため、ここで重複させない."""
+    plan = _plan(sections=[SectionDraft(key="company_overview", heading="企業概要", body="短い。")])
+    assert not _rules(check(plan, koubo), "form.section.too_short")
 
 
 def test_ウェブサイト関連費の4分の1上限(koubo):

@@ -100,8 +100,44 @@ def test_長すぎる一文を検出する():
 
 
 def test_数値不足を件数付きで指摘する():
-    f = [x for x in check_section(_sec("company_overview", "当社は和菓子を製造している。")) if x.code == "numbers"]
-    assert f and "5個以上" in f[0].message
+    required = load_rules().requirements("company_overview")["min_numbers"]
+    f = [
+        x
+        for x in check_section(_sec("company_overview", "当社は和菓子を製造している。"))
+        if x.code == "numbers"
+    ]
+    assert f and f"{required}個以上" in f[0].message
+
+
+def test_分量不足を要修正として検出する():
+    """記入欄が埋まっていない計画書は『書くことがない事業』と映る."""
+    sec = SectionDraft(
+        key="company_overview", heading="企業概要", body="あ" * 400,
+        min_chars=900, target_chars=1100, max_chars=1400,
+    )
+    f = [x for x in check_section(sec) if x.code == "length_short"]
+    assert f and f[0].severity == "must"
+    assert "500字不足" in f[0].fix or "500" in f[0].message
+    assert "1100字程度" in f[0].fix
+
+
+def test_下限を満たせば分量は指摘しない():
+    sec = SectionDraft(
+        key="company_overview", heading="企業概要", body="あ" * 1000,
+        min_chars=900, target_chars=1100, max_chars=1400,
+    )
+    assert "length_short" not in _codes(check_section(sec))
+
+
+def test_字数は空白と改行を除いて数える():
+    """記入欄の字数に改行やインデントは含まれない."""
+    sec = SectionDraft(key="effect", heading="効果", body="あいう\n\n  えお  \n")
+    assert sec.char_count == 5
+
+
+def test_充足率を返す():
+    sec = SectionDraft(key="effect", heading="効果", body="あ" * 550, target_chars=1100)
+    assert sec.fill_ratio == 0.5
 
 
 def test_セクション間の重複を検出する():

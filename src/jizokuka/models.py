@@ -211,15 +211,29 @@ class SectionDraft(Loose):
     heading: str
     body: str
     char_count: int = 0
-    max_chars: int | None = None
+    min_chars: int | None = Field(default=None, description="これを下回ると情報量不足")
+    target_chars: int | None = Field(default=None, description="執筆時に狙う分量")
+    max_chars: int | None = Field(default=None, description="記入欄に収まる上限")
     revision: int = 0
 
     def model_post_init(self, _ctx: Any) -> None:
-        self.char_count = len(self.body.replace("\n", ""))
+        # 改行・空白は記入欄の字数に数えない
+        self.char_count = len(re.sub(r"\s+", "", self.body))
 
     @property
     def over_limit(self) -> bool:
         return self.max_chars is not None and self.char_count > self.max_chars
+
+    @property
+    def under_min(self) -> bool:
+        return self.min_chars is not None and self.char_count < self.min_chars
+
+    @property
+    def fill_ratio(self) -> float | None:
+        """目標分量に対する充足率. 記入欄がどれだけ埋まっているか."""
+        if not self.target_chars:
+            return None
+        return self.char_count / self.target_chars
 
 
 class AxisScore(Loose):

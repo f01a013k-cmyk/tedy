@@ -92,6 +92,24 @@ def check_section(
             )
         )
 
+    # -- 分量 ---------------------------------------------------------------
+    # 記入欄が埋まっていない計画書は、審査員に「書くことがない事業」と映る。
+    # 字数は最も機械的に判定できる品質指標なので、must として扱う。
+    if sec.under_min:
+        assert sec.min_chars is not None
+        short = sec.min_chars - sec.char_count
+        target = sec.target_chars or sec.min_chars
+        hints = req.get("hints", [])
+        fix = f"{short}字以上加筆し、{target}字程度まで充実させる。"
+        if hints:
+            fix += f"不足しがちな観点: {'、'.join(hints)}"
+        add(
+            "length_short",
+            "must",
+            f"{sec.char_count}字しかなく、この項目の下限{sec.min_chars}字に{short}字不足している",
+            fix,
+        )
+
     # -- 主観形容詞 ---------------------------------------------------------
     for group in rules.raw.get("subjective_words", []):
         for w in group["words"]:

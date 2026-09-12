@@ -96,15 +96,7 @@ def _check_sections(rep: ComplianceReport, plan: Plan, koubo: Koubo) -> None:
                 where=key,
                 fix_hint=f"`jizokuka trim {plan.project_id} --section {key}` で圧縮できます。",
             )
-        # 短すぎる本文も減点要因
-        elif max_chars and sec.char_count < max_chars * 0.4:
-            rep.add(
-                "warn",
-                "form.section.too_short",
-                f"「{sec.heading}」が{sec.char_count}文字と、記入欄（目安{max_chars}文字）に"
-                f"対して大幅に短いです。審査員に情報量不足と映ります。",
-                where=key,
-            )
+        # 分量不足は quality.py が must として扱うため、ここでは重複して出さない
 
 
 def _check_expenses(

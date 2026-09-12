@@ -15,7 +15,7 @@ from ..knowledge import Koubo, examples_prompt
 from ..llm import LLM
 from ..llm.client import load_prompt
 from ..models import AxisScore, GapAnalysis, HearingSheet, Plan, QualityFinding, SectionDraft
-from .draft import min_chars_for
+
 from .gap import _sheet_yaml, facts_text
 from .quality import findings_for, requirements_prompt, summarize
 
@@ -40,6 +40,8 @@ def revise_section(
     quality: list[QualityFinding] | None = None,
 ) -> SectionDraft:
     max_chars = sec.max_chars or 800
+    target_chars = sec.target_chars or int(max_chars * 0.8)
+    min_chars = sec.min_chars or int(max_chars * 0.65)
     prompt = load_prompt("revise").format(
         heading=sec.heading,
         body=sec.body,
@@ -53,7 +55,8 @@ def revise_section(
         hearing_yaml=_sheet_yaml(sheet),
         facts=facts_text(gap.facts),
         max_chars=max_chars,
-        min_chars=min_chars_for(max_chars),
+        min_chars=min_chars,
+        target_chars=target_chars,
     )
     body = llm.complete(
         prompt,
@@ -67,6 +70,8 @@ def revise_section(
         key=sec.key,
         heading=sec.heading,
         body=body,
+        min_chars=sec.min_chars,
+        target_chars=sec.target_chars,
         max_chars=sec.max_chars,
         revision=sec.revision + 1,
     )
