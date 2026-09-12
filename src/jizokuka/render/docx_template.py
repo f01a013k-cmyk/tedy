@@ -34,9 +34,14 @@ _EXAMPLE_LINE = re.compile(r"^例[：:）)]|[×✕]{2,}|[●○]{2,}|〇名")
 # 章番号の区切りに使われうるハイフン類。長音記号「ー」は**含めない**
 # （含めると「顧客ニーズ」が「顧客ニ-ズ」になり、見出し語の照合が壊れる）
 _DASHES = "-‐‑‒–—―−"
+# 章番号のあとには必ず空白が入る。ここを省略可にすると
+# 「2026年度 売上高…」「1,996,800円 × 54%」「4月 冷凍機の発注」といった
+# 本文行まで見出しとして拾ってしまい、流し込み先を取り違える。
 _HEADING_NUMBER = re.compile(
-    rf"^([0-9]{{1,2}}(?:[{_DASHES}][0-9]{{1,2}}){{0,3}})[\s　]*(.*)$"
+    rf"^([0-9]{{1,2}}(?:[{_DASHES}][0-9]{{1,2}}){{0,3}})[\s　]+(\S.*)$"
 )
+# 丸数字は NFKC で「①」→「1」になるため、正規化前に弾く
+_LIST_MARKER = re.compile(r"^\s*[①-⑳・▪●○※]")
 
 
 def normalize(text: str) -> str:
@@ -46,6 +51,8 @@ def normalize(text: str) -> str:
 
 def heading_key(text: str) -> tuple[str, str] | None:
     """見出し段落から (章番号, 見出し語) を取り出す. 見出しでなければ None."""
+    if _LIST_MARKER.match(text or ""):
+        return None
     m = _HEADING_NUMBER.match(normalize(text))
     if not m:
         return None
