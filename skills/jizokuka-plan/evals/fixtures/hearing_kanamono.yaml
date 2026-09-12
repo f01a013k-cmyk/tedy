@@ -1,0 +1,36 @@
+# 顧客から返ってきたヒアリングシート（単語しか埋まっていない）
+project_id: yamashita_seisaku
+frame: 通常枠
+specials: [インボイス特例]
+company:
+  name: 有限会社山下製作所
+  representative: 山下健一
+  address: 新潟県燕市
+  founded: 1988
+  employees: 6
+  industry: 金属プレス加工
+  business: [金属プレス加工, 治具製作]
+  products: [自動車部品, 建材金物, 試作品]
+  customers: [自動車部品メーカー2社, 建材商社]
+  channels: [直取引]
+  area: [燕三条, 新潟県内]
+  sales: {2023: 98000000, 2024: 91000000, 2025: 84000000}
+  profit: {2025: 2100000}
+  is_invoice_registered: true
+  is_deficit: false
+strengths: [創業37年, 0.1mm精度, 小ロット対応, 短納期]
+weaknesses: [下請け依存, 単価下落, 営業人材なし, 高齢化]
+competitors: [市内の同業B社（大手下請）, 県外の量産系メーカー]
+market: [EV化で部品減, 試作需要増, 燕三条ブランド, 直販]
+goal: [自社製品, 試作受託, 展示会, 脱下請け]
+project:
+  idea: [レーザー加工機, 自社サイト, 試作受託の看板]
+  target_customer: [スタートアップ, 研究機関, デザイナー]
+  expenses:
+    - {item: ファイバーレーザー加工機, amount: 1200000}
+    - {item: 自社サイト, amount: 400000}
+    - {item: 展示会出展, amount: 150000}
+free_notes: |
+  取引先の自動車部品メーカーから「EV化で来年から発注を3割減らす」と言われている。
+  息子が機械科の大学院を出て来年入社予定。
+  燕三条の展示会に毎年行っているが出展はしたことがない。

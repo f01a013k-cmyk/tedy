@@ -13,3 +13,6 @@ projects/
 
 .pytest_cache/
 .DS_Store
+
+# スキルの評価ワークスペース（生成物）
+skills/*-workspace/

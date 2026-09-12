@@ -1,0 +1,36 @@
+# 顧客から返ってきたヒアリングシート（単語しか埋まっていない）
+project_id: hair_kotori
+frame: 通常枠
+specials: []
+company:
+  name: ヘアサロン ことり
+  representative: 小鳥遊 美咲
+  address: 岡山県倉敷市
+  founded: 2014
+  employees: 3
+  industry: 美容業
+  business: [カット, カラー, パーマ, ヘッドスパ]
+  products: [カット4500円, カラー8000円, ヘッドスパ3000円]
+  customers: [30-50代女性, 近隣住民, 子連れ]
+  channels: [店舗のみ]
+  area: [倉敷市中心部]
+  sales: {2023: 21000000, 2024: 20000000, 2025: 18500000}
+  profit: {2025: 900000}
+  is_invoice_registered: false
+  is_deficit: false
+strengths: [白髪ぼかし得意, 個室あり, 子連れOK, 指名率]
+weaknesses: [新規来店減, 予約は電話のみ, SNS弱い, スタッフ募集難]
+competitors: [駅前の大手チェーン, 近所の個人サロン2軒]
+market: [白髪ぼかし需要, 予約アプリ普及, 美容室過多, 単価上昇]
+goal: [新規客増, 客単価up, 若手採用]
+project:
+  idea: [予約システム, ヘッドスパ強化, 専用チェア]
+  target_customer: [40-60代女性, 働く女性]
+  expenses:
+    - {item: ウェブ予約システム, amount: 350000}
+    - {item: ヘッドスパ用シャンプー台, amount: 550000}
+    - {item: チラシとサイト改修, amount: 200000}
+free_notes: |
+  電話が施術中に取れず、機会損失が多いと感じている。週に5-6件は取りこぼしている感覚。
+  ヘッドスパの指名は多いが、今のシャンプー台だと長時間が辛いと言われる。
+  近所に大手チェーンが2年前にできてから新規が減った。

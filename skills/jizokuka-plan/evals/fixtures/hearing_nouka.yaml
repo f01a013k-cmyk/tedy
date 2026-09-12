@@ -1,0 +1,31 @@
+# 顧客から返ってきたヒアリングシート（ほとんど空欄。面談メモだけが頼り）
+project_id: midori_farm
+frame: 通常枠
+specials: [インボイス特例]
+company:
+  name: みどり農園
+  representative: 緑川 大地
+  address: 熊本県阿蘇市
+  founded: 2009
+  employees: 2
+  industry: 農業
+  business: [トマト栽培]
+  products: [ミニトマト]
+  customers: [JA出荷]
+  channels: [JA]
+  area: []
+  sales: {2025: 12000000}
+  profit: {}
+strengths: [阿蘇の水, 糖度高い]
+weaknesses: [JA一本, 規格外品を廃棄, 価格決まらない]
+competitors: []
+market: [加工需要, ふるさと納税, 直販]
+goal: [加工品, 直販]
+project:
+  idea: [ドライトマト, 加工機, ネット販売]
+  expenses: []
+free_notes: |
+  規格外のミニトマトが毎年2割くらい出て、捨てるしかない。もったいない。
+  近所の道の駅から「ドライトマトを置きたい」と言われている。
+  奥さんが元パティシエ。加工品のアイデアはあるらしい。
+  いくらかかるかは全然わからない。
