@@ -1,0 +1,42 @@
+# サンプル: 実際の現場でありがちな「単語しか埋まっていない」ヒアリングシート
+project_id: tanaka_seika
+koubo_id: r17
+frame: 通常枠
+specials: [インボイス特例]
+
+company:
+  name: 有限会社田中製菓
+  representative: 田中太郎
+  address: 長野県松本市中央
+  founded: 1975
+  employees: 4
+  industry: 菓子製造小売業
+  business: [和菓子製造, 店頭小売, 卸]
+  products: [どら焼き, 大福, 季節生菓子]
+  customers: [地元高齢者, 観光客, 近隣旅館]
+  channels: [店頭, 旅館への卸]
+  area: [松本市内]
+  sales: {2023: 42000000, 2024: 38000000, 2025: 35000000}
+  profit: {2025: 1200000}
+  is_invoice_registered: true
+  is_deficit: false
+
+strengths: [創業50年, 自家製餡, 無添加, 地元産米使用]
+weaknesses: [人口減, 客層高齢化, 認知度低い, 生菓子は日持ちしない]
+market: [観光回復, 土産需要, EC拡大, 贈答の個食化]
+goal: [EC進出, 全国発送, 若年層開拓]
+
+project:
+  idea: [特殊冷凍機導入, ECサイト構築, 冷凍配送]
+  target_customer: [首都圏30-40代, 帰省土産, 贈答]
+  expenses:
+    - {item: 特殊冷凍機, amount: 800000}
+    - {item: ECサイト, amount: 400000}
+    - {item: パッケージデザイン, amount: 150000}
+
+policy_bonus: []
+
+free_notes: |
+  旅館の女将さんから「東京の常連客に送りたい」と何度も言われている。
+  生菓子は2日しか持たないので今は断っている。
+  息子（32歳）が来年Uターン予定。

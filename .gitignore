@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# 顧客データと生成物はリポジトリに入れない
+projects/
+.jizokuka_cache/
+.env
+
+.pytest_cache/
+.DS_Store

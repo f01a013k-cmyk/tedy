@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jizokuka"
+version = "0.1.0"
+description = "小規模事業者持続化補助金 事業計画書 自動作成システム"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.40",
+    "python-docx>=1.1",
+    "openpyxl>=3.1",
+    "pyyaml>=6.0",
+    "pydantic>=2.5",
+]
+
+[project.scripts]
+jizokuka = "jizokuka.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+jizokuka = ["knowledge/*.yaml", "llm/prompts/*.md", "templates/*.yaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
