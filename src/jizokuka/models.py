@@ -134,6 +134,10 @@ class HearingSheet(Loose):
     company: Company = Field(default_factory=Company)
     strengths: list[str] = Field(default_factory=list)
     weaknesses: list[str] = Field(default_factory=list)
+    competitors: list[str] = Field(
+        default_factory=list,
+        description="競合他社（実名。単語可）。採択可否に直結するため推論で埋めない",
+    )
     market: list[str] = Field(default_factory=list, description="市場動向のキーワード")
     goal: list[str] = Field(default_factory=list, description="今後やりたいこと")
     project: ProjectIdea = Field(default_factory=ProjectIdea)
@@ -141,7 +145,8 @@ class HearingSheet(Loose):
     free_notes: str | None = Field(default=None, description="面談メモ等の自由記述")
 
     _norm = field_validator(
-        "specials", "strengths", "weaknesses", "market", "goal", "policy_bonus",
+        "specials", "strengths", "weaknesses", "competitors", "market", "goal",
+        "policy_bonus",
         mode="before",
     )(lambda v: _as_list(v))
 

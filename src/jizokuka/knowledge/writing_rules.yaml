@@ -44,6 +44,10 @@ section_requirements:
     min_numbers: 9
     require_source: true
     hints: [市場規模, 成長率, 商圏人口, 統計の出典]
+  competition:
+    min_numbers: 10
+    require_comparison: true
+    hints: [競合の店舗数・従業員数, 競合の価格帯, 自社との価格差, 競合のEC対応状況, 自社が優位な点, 自社が劣位な点]
   strengths:
     min_numbers: 8
     hints: [年数, 保有設備, 資格, リピート率, 歩留まり]
@@ -76,6 +80,8 @@ patterns:
   source: '(?:出典|による|によれば|統計|白書|調査|年鑑|報告書|センサス|国勢調査|経済センサス)'
   # 実施スケジュール: ◯月 が複数 または 四半期表現
   schedule_month: '(?:[0-9０-９]{1,2}\s*月|第[0-9０-９一二三四]\s*四半期)'
+  # 比較表現: 競合と自社を並べて論じているか
+  comparison: '(?:に対し|と比べ|と比較|一方|優位|劣位|上回|下回|同水準|先行し|当社より|当社は)'
   # 年度別目標
   yearly_target: '(?:[0-9０-９]{4}\s*年度|翌年度|[0-9０-９]\s*年後|初年度|[0-9０-９]\s*年目)'
   # 時間削減

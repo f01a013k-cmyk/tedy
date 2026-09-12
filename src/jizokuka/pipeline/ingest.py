@@ -31,6 +31,7 @@ _ALIASES: dict[str, str] = {
     "販売チャネル": "company.channels", "チャネル": "company.channels", "販路": "company.channels",
     "商圏": "company.area", "エリア": "company.area",
     "強み": "strengths", "弱み": "weaknesses",
+    "競合": "competitors", "競合他社": "competitors", "ライバル": "competitors",
     "市場": "market", "市場動向": "market",
     "目標": "goal", "やりたいこと": "goal", "今後": "goal",
     "申請枠": "frame", "枠": "frame",

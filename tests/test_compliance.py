@@ -21,10 +21,14 @@ def test_補助金額は切り捨てで上限に張り付く():
 
 
 def test_必須セクション欠落はエラー(koubo):
-    """経営計画4項目＋補助事業計画3項目の計7つが必須（業務効率化のみ任意）."""
+    """必須項目の数は仕様から導出する（様式の項目は回次で増減するため）."""
+    specs = koubo.all_section_specs()
+    required = [s for s in specs if not s.get("optional")]
+    optional = [s for s in specs if s.get("optional")]
+
     rep = check(_plan(), koubo)
-    assert len(_rules(rep, "form.section.missing")) == 7
-    assert len(_rules(rep, "form.section.optional")) == 1
+    assert len(_rules(rep, "form.section.missing")) == len(required)
+    assert len(_rules(rep, "form.section.optional")) == len(optional)
 
 
 def test_事業名30字超はエラー_他は警告(koubo):
